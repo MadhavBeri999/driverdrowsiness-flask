@@ -1,0 +1,6 @@
+flask
+opencv-python
+mediapipe
+playsound
+threading
+jsonlib-python3
