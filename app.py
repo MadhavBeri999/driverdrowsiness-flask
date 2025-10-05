@@ -1,5 +1,6 @@
-from flask import Flask, render_template, Response
-from detection.detect_drowsiness import gen_frames  # Updated import from detection folder
+from flask import Flask, render_template, Response, jsonify
+from detection.detect_drowsiness import gen_frames  # only gen_frames
+from state import alert_counts  # single source of truth for counters
 
 app = Flask(__name__)
 
@@ -13,12 +14,17 @@ def home():
 
 @app.route('/video_feed')
 def video_feed():
-    """Video streaming route. Put this in the src of <img> tag."""
+    """Video streaming route."""
     return Response(gen_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-# Optional: Add a simple test route for API health check
+@app.route('/get_alert_counts')
+def get_alert_counts():
+    """Provides real-time alert counts to frontend (for counters)."""
+    return jsonify(alert_counts)
+
+
 @app.route('/health')
 def health_check():
     return {"status": "OK"}, 200
@@ -26,5 +32,4 @@ def health_check():
 
 # ------------------- Main -------------------
 if __name__ == '__main__':
-    # Run Flask app with debug on and allow reloader
     app.run(host='0.0.0.0', port=5000, debug=True)

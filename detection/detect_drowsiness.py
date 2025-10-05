@@ -5,6 +5,9 @@ import threading
 import json
 import time
 from playsound import playsound
+from state import alert_counts
+
+
 
 # ------------------- Utility Functions -------------------
 def euclidean_dist(a, b):
@@ -51,6 +54,11 @@ yawn_in_progress = False
 head_tilt_start = None
 head_tilt_active = False
 
+# Per-alert counters (new)
+sleep_alert_counter = 0
+yawn_alert_counter = 0
+headtilt_alert_counter = 0
+
 # Alert message variables
 alert_message = ""
 alert_color = (0, 0, 0)
@@ -73,6 +81,7 @@ def gen_frames():
     global ear_counter, yawn_frame_counter, yawn_event_counter, yawn_in_progress
     global head_tilt_start, head_tilt_active
     global alert_message, alert_color, alert_bg, alert_end_time
+    global sleep_alert_counter, yawn_alert_counter, headtilt_alert_counter
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
@@ -111,6 +120,9 @@ def gen_frames():
                         ear_counter += 1
                         if ear_counter >= EYE_CONSEC_FRAMES:
                             play_alert(sleep_alert)
+                            sleep_alert_counter += 1 
+                            alert_counts["sleep"] += 1
+
                             alert_message = "DROWSY! Eyes Closed"
                             alert_color = (255, 255, 255)
                             alert_bg = (0, 0, 255)
@@ -135,6 +147,8 @@ def gen_frames():
 
                     if yawn_event_counter >= YAWN_ALERT_COUNT:
                         play_alert(yawn_alert)
+                        yawn_alert_counter += 1
+                        alert_counts["yawn"] += 1   
                         alert_message = "ALERT! Too Many Yawns"
                         alert_color = (255, 255, 255)
                         alert_bg = (255, 0, 0)
@@ -154,6 +168,9 @@ def gen_frames():
                             head_tilt_start = time.time()
                         elif time.time() - head_tilt_start > 1.0 and not head_tilt_active:
                             play_alert(headtilt_alert)
+                            headtilt_alert_counter += 1
+                            alert_counts["head_tilt"] += 1
+
                             alert_message = "HEAD TILT DETECTED!"
                             alert_color = (0, 0, 0)
                             alert_bg = (0, 255, 255)
