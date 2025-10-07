@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>Driver Drowsiness - Test User Form</h2>
+
+<form id="userForm">
+  <h3>User Info</h3>
+  Full Name: <input type="text" id="full_name" required><br><br>
+  Age: <input type="number" id="age" required><br><br>
+  Email: <input type="email" id="email" required><br><br>
+  Phone: <input type="text" id="phone" required><br><br>
+
+  <h3>Emergency Contact</h3>
+  Name: <input type="text" id="contact1_name" required><br><br>
+  Relation: <input type="text" id="contact1_relation" required><br><br>
+  Email: <input type="email" id="contact1_email" required><br><br>
+  Phone: <input type="text" id="contact1_phone" required><br><br>
+
+  <button id="submit_btn">Submit</button>
+</form>
+<script>
+document.getElementById('submit_btn').addEventListener('click', async function(e) {
+    e.preventDefault(); // prevent normal form submission
+
+    // Collect user info
+    const userInfo = {
+        full_name: document.getElementById('full_name').value,
+        age: parseInt(document.getElementById('age').value),
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value
+    };
+
+    // Collect emergency contact
+    const contacts = [
+        {
+            name: document.getElementById('contact1_name').value,
+            relation: document.getElementById('contact1_relation').value,
+            email: document.getElementById('contact1_email').value,
+            phone: document.getElementById('contact1_phone').value
+        }
+    ];
+
+    // Send POST request to Flask
+    try {
+        const response = await fetch('/add_user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_info: userInfo, contacts: contacts })
+        });
+
+        const result = await response.json();
+
+        if(result.status === 'success'){
+            alert("User saved successfully! User ID: " + result.user_id);
+        } else {
+            alert("Error: " + result.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Failed to save user data.");
+    }
+});
+</script>
+
+
+    
+    
+</body>
+</html>
