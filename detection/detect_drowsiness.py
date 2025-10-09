@@ -28,10 +28,13 @@ def play_alert(sound_file):
     threading.Thread(target=playsound, args=(sound_file,), daemon=True).start()
 
 # ------------------- Helper to Send Alert to Flask -------------------
-def send_alert_to_backend(user_id: str, alert_type: str):
-    """Send alert data to Flask backend when threshold exceeded."""
+def send_alert_to_backend(alert_type: str):
+    """
+    Send alert data to Flask backend when threshold exceeded.
+    Now it automatically uses the latest registered user (no hardcoded ID).
+    """
     try:
-        payload = {"user_id": user_id, "alert_type": alert_type}
+        payload = {"alert_type": alert_type}  # ✅ no user_id needed
         res = requests.post("http://127.0.0.1:5000/log_alert", json=payload, timeout=2)
         if res.status_code == 200:
             print(f"[detect_drowsiness] ✅ Logged {alert_type} alert to backend.")
@@ -93,8 +96,6 @@ def gen_frames():
     global alert_message, alert_color, alert_bg, alert_end_time
     global sleep_alert_counter, yawn_alert_counter, headtilt_alert_counter
 
-    user_id = "test-user-1"  # 🧠 TODO: Replace with dynamic user from frontend later
-
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         raise RuntimeError("Could not open webcam (check camera index).")
@@ -125,10 +126,8 @@ def gen_frames():
                         ear_counter += 1
                         if ear_counter >= EYE_CONSEC_FRAMES:
                             play_alert(sleep_alert)
-                            sleep_alert_counter += 1 
-                            
-                            send_alert_to_backend(user_id, "sleep")  # 🔥 new backend log
-
+                            sleep_alert_counter += 1
+                            send_alert_to_backend("sleep")  # ✅ auto send to latest user
                             alert_message = "DROWSY! Eyes Closed"
                             alert_color = (255, 255, 255)
                             alert_bg = (0, 0, 255)
@@ -150,9 +149,7 @@ def gen_frames():
                     if yawn_event_counter >= YAWN_ALERT_COUNT:
                         play_alert(yawn_alert)
                         yawn_alert_counter += 1
-                        
-                        send_alert_to_backend(user_id, "yawn")  # 🔥 new backend log
-
+                        send_alert_to_backend("yawn")  # ✅ auto send to latest user
                         alert_message = "ALERT! Too Many Yawns"
                         alert_color = (255, 255, 255)
                         alert_bg = (255, 0, 0)
@@ -173,9 +170,7 @@ def gen_frames():
                         elif time.time() - head_tilt_start > 1.0 and not head_tilt_active:
                             play_alert(headtilt_alert)
                             headtilt_alert_counter += 1
-                            
-                            send_alert_to_backend(user_id, "head_tilt")  # 🔥 new backend log
-
+                            send_alert_to_backend("head_tilt")  # ✅ auto send to latest user
                             alert_message = "HEAD TILT DETECTED!"
                             alert_color = (0, 0, 0)
                             alert_bg = (0, 255, 255)

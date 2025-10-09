@@ -90,7 +90,7 @@ def add_user_to_db(user_info, contacts):
     return user_id
 
 
-# ------------------- NEW: Get user + contacts -------------------
+# ------------------- Get User + Contacts -------------------
 def get_contacts_for_user(user_id: str):
     conn = get_db_connection()
     c = conn.cursor()
@@ -112,9 +112,11 @@ def get_contacts_for_user(user_id: str):
 # ------------------- Initialization -------------------
 create_tables_if_not_exist()
 
-# ------------------- Cooldown config -------------------
-# time window (seconds) during which repeated notifications for the same user+alert_type are suppressed
-COOL_DOWN_SECONDS = 10 * 60   # 10 minutes (adjust as needed)
+# Track the most recently registered user
+latest_user_id = None
+
+# Cooldown config
+COOL_DOWN_SECONDS = 10 * 60   # 10 minutes
 _last_notification_time = {}  # dict keyed by (user_id, alert_type) -> last_sent_timestamp
 
 
@@ -141,6 +143,7 @@ def health_check():
 
 @app.route('/add_user', methods=['POST'])
 def add_user():
+    global latest_user_id  # 🔥 track most recent user
     print("[/add_user] Request. DB_PATH:", DB_PATH)
     if not request.is_json:
         return jsonify({"status": "error", "message": "Expected JSON payload"}), 400
@@ -162,6 +165,8 @@ def add_user():
 
     try:
         user_id = add_user_to_db(user_info, contacts)
+        latest_user_id = user_id  # ✅ save the latest user ID
+        print(f"[app.py] ✅ Latest active user set to {latest_user_id}")
         return jsonify({"status": "success", "user_id": user_id}), 201
     except Exception as e:
         print("[/add_user] Exception while inserting:", e)
@@ -177,17 +182,16 @@ def list_users():
     return jsonify({"users": users, "contacts": contacts})
 
 
-# ------------------- NEW ROUTE: LOG ALERT -------------------
+# ------------------- LOG ALERT -------------------
 @app.route('/log_alert', methods=['POST'])
 def log_alert_endpoint():
-    """
-    Receives alert data from detection system.
-    Example JSON: {"user_id": "abc-123", "alert_type": "yawn"}
-    """
+    global latest_user_id
+
     data = request.get_json()
     print("[/log_alert] Incoming alert data:", data)
 
-    user_id = data.get("user_id")
+    # Use active user if no user_id given
+    user_id = data.get("user_id") or latest_user_id
     alert_type = data.get("alert_type")
 
     if not user_id or not alert_type:
@@ -198,15 +202,15 @@ def log_alert_endpoint():
         if triggered:
             print(f"🚨 [NOTIFICATION] Alert triggered for {alert_type} (user {user_id})")
 
-            # cooldown check
+            # cooldown
             key = (user_id, alert_type)
             now_ts = time.time()
             last_sent = _last_notification_time.get(key, 0)
             if now_ts - last_sent < COOL_DOWN_SECONDS:
-                print(f"⏱️ Cooldown active for {key}. Skipping email. last_sent={last_sent}, now={now_ts}")
+                print(f"⏱️ Cooldown active for {key}. Skipping email.")
                 return jsonify({"threshold_exceeded": True, "emails_sent": 0, "cooldown": True}), 200
 
-            # Fetch user + contacts
+            # Fetch contacts
             driver_name, contacts = get_contacts_for_user(user_id)
             if not contacts:
                 print(f"⚠️ No contacts found for user {user_id}")
@@ -219,7 +223,6 @@ def log_alert_endpoint():
                 if success:
                     sent_count += 1
 
-            # update last notification timestamp
             _last_notification_time[key] = time.time()
             print(f"📨 Emails sent successfully: {sent_count}")
             return jsonify({"threshold_exceeded": True, "emails_sent": sent_count}), 200
@@ -230,7 +233,6 @@ def log_alert_endpoint():
         return jsonify({"error": str(e)}), 500
 
 
-# ------------------- Run Flask -------------------
 if __name__ == '__main__':
     print("[app] Starting Flask app. DB file:", DB_PATH)
     app.run(host='0.0.0.0', port=5000, debug=True)
