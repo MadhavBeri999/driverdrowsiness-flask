@@ -112,12 +112,11 @@ def get_contacts_for_user(user_id: str):
 # ------------------- Initialization -------------------
 create_tables_if_not_exist()
 
-# Track the most recently registered user
-latest_user_id = None
+latest_user_id = None  # ✅ Track most recent user
+EMAILS_SENT_COUNT = 0  # ✅ Track total number of sent emails
 
-# Cooldown config
 COOL_DOWN_SECONDS = 10 * 60   # 10 minutes
-_last_notification_time = {}  # dict keyed by (user_id, alert_type) -> last_sent_timestamp
+_last_notification_time = {}  # cooldown dictionary
 
 
 # ------------------- Routes -------------------
@@ -143,7 +142,7 @@ def health_check():
 
 @app.route('/add_user', methods=['POST'])
 def add_user():
-    global latest_user_id  # 🔥 track most recent user
+    global latest_user_id
     print("[/add_user] Request. DB_PATH:", DB_PATH)
     if not request.is_json:
         return jsonify({"status": "error", "message": "Expected JSON payload"}), 400
@@ -165,7 +164,7 @@ def add_user():
 
     try:
         user_id = add_user_to_db(user_info, contacts)
-        latest_user_id = user_id  # ✅ save the latest user ID
+        latest_user_id = user_id
         print(f"[app.py] ✅ Latest active user set to {latest_user_id}")
         return jsonify({"status": "success", "user_id": user_id}), 201
     except Exception as e:
@@ -185,12 +184,11 @@ def list_users():
 # ------------------- LOG ALERT -------------------
 @app.route('/log_alert', methods=['POST'])
 def log_alert_endpoint():
-    global latest_user_id
+    global latest_user_id, EMAILS_SENT_COUNT
 
     data = request.get_json()
     print("[/log_alert] Incoming alert data:", data)
 
-    # Use active user if no user_id given
     user_id = data.get("user_id") or latest_user_id
     alert_type = data.get("alert_type")
 
@@ -202,7 +200,6 @@ def log_alert_endpoint():
         if triggered:
             print(f"🚨 [NOTIFICATION] Alert triggered for {alert_type} (user {user_id})")
 
-            # cooldown
             key = (user_id, alert_type)
             now_ts = time.time()
             last_sent = _last_notification_time.get(key, 0)
@@ -210,7 +207,6 @@ def log_alert_endpoint():
                 print(f"⏱️ Cooldown active for {key}. Skipping email.")
                 return jsonify({"threshold_exceeded": True, "emails_sent": 0, "cooldown": True}), 200
 
-            # Fetch contacts
             driver_name, contacts = get_contacts_for_user(user_id)
             if not contacts:
                 print(f"⚠️ No contacts found for user {user_id}")
@@ -223,6 +219,7 @@ def log_alert_endpoint():
                 if success:
                     sent_count += 1
 
+            EMAILS_SENT_COUNT += sent_count  # ✅ Count all sent emails
             _last_notification_time[key] = time.time()
             print(f"📨 Emails sent successfully: {sent_count}")
             return jsonify({"threshold_exceeded": True, "emails_sent": sent_count}), 200
@@ -233,6 +230,52 @@ def log_alert_endpoint():
         return jsonify({"error": str(e)}), 500
 
 
+# ------------------- NEW DASHBOARD ROUTES -------------------
+@app.route('/get_total_notifications', methods=['GET'])
+def get_total_notifications():
+    """Return total number of emails sent since server start (in-memory)."""
+    return jsonify({"emails_sent": EMAILS_SENT_COUNT}), 200
+
+
+@app.route('/get_recent_alerts', methods=['GET'])
+def get_recent_alerts():
+    """Return the 10 most recent alerts with user name."""
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        # Join alerts → sessions → users
+        c.execute("""
+            SELECT a.alert_type, a.timestamp, u.full_name AS user_name
+            FROM alerts a
+            JOIN sessions s ON a.session_id = s.id
+            JOIN users u ON s.user_id = u.id
+            ORDER BY a.timestamp DESC
+            LIMIT 10;
+        """)
+        rows = c.fetchall()
+        conn.close()
+
+        alerts = [
+            {
+                "type": r["alert_type"],
+                "timestamp": r["timestamp"],
+                "user": r["user_name"]
+            }
+            for r in rows
+        ]
+        return jsonify({"alerts": alerts}), 200
+    except Exception as e:
+        print("[/get_recent_alerts] Could not fetch alerts:", e)
+        return jsonify({"alerts": []}), 200
+
+
+
+@app.route('/dashboard')
+def dashboard_page():
+    return render_template('dashboard.html')
+
+
+# ------------------- Run Flask -------------------
 if __name__ == '__main__':
     print("[app] Starting Flask app. DB file:", DB_PATH)
     app.run(host='0.0.0.0', port=5000, debug=True)
