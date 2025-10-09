@@ -1,32 +1,34 @@
 # app.py
 from flask import Flask, render_template, Response, jsonify, request
-from detection.detect_drowsiness import gen_frames  # keep your existing import
-from state import alert_counts
+from detection.detect_drowsiness import gen_frames
+from state import alert_counts, log_alert
 from flask_cors import CORS
+from email_utils import send_email_notification, compose_alert_message
 import sqlite3
 import uuid
 import os
+import time
 
 app = Flask(__name__)
 CORS(app)
 
-# Database path resolved relative to this file (avoid cwd issues)
+# ------------------- Database Config -------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_DIR = os.path.join(BASE_DIR, "database")
 os.makedirs(DB_DIR, exist_ok=True)
 DB_PATH = os.path.join(DB_DIR, "driver_drowsiness.db")
 
+
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    # enable foreign keys
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
+
 
 def create_tables_if_not_exist():
     conn = get_db_connection()
     c = conn.cursor()
-    # Users table
     c.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
@@ -36,7 +38,6 @@ def create_tables_if_not_exist():
         phone TEXT
     );
     """)
-    # Contacts table
     c.execute("""
     CREATE TABLE IF NOT EXISTS contacts (
         id TEXT PRIMARY KEY,
@@ -51,6 +52,7 @@ def create_tables_if_not_exist():
     conn.commit()
     conn.close()
     print("[DB] Ensured tables exist at:", DB_PATH)
+
 
 def add_user_to_db(user_info, contacts):
     conn = get_db_connection()
@@ -82,41 +84,65 @@ def add_user_to_db(user_info, contacts):
     except Exception as db_err:
         conn.rollback()
         print("[add_user_to_db] ERROR while inserting into DB:", db_err)
-        print("[add_user_to_db] user_info:", user_info)
-        print("[add_user_to_db] contacts:", contacts)
         raise
     finally:
         conn.close()
     return user_id
 
-# Ensure DB/tables exist at startup
+
+# ------------------- NEW: Get user + contacts -------------------
+def get_contacts_for_user(user_id: str):
+    conn = get_db_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT full_name FROM users WHERE id = ?", (user_id,))
+        user_row = c.fetchone()
+        if not user_row:
+            return None, []
+
+        driver_name = user_row["full_name"]
+
+        c.execute("SELECT name, email FROM contacts WHERE user_id = ?", (user_id,))
+        contacts = [{"name": row["name"], "email": row["email"]} for row in c.fetchall()]
+        return driver_name, contacts
+    finally:
+        conn.close()
+
+
+# ------------------- Initialization -------------------
 create_tables_if_not_exist()
 
-# ------------------- Routes -------------------
+# ------------------- Cooldown config -------------------
+# time window (seconds) during which repeated notifications for the same user+alert_type are suppressed
+COOL_DOWN_SECONDS = 10 * 60   # 10 minutes (adjust as needed)
+_last_notification_time = {}  # dict keyed by (user_id, alert_type) -> last_sent_timestamp
 
+
+# ------------------- Routes -------------------
 @app.route('/')
 def home():
     return render_template('index.html')
+
 
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
 @app.route('/get_alert_counts')
 def get_alert_counts():
     return jsonify(alert_counts)
+
 
 @app.route('/health')
 def health_check():
     return {"status": "OK"}, 200
 
+
 @app.route('/add_user', methods=['POST'])
 def add_user():
-    print("[/add_user] Request. DB_PATH:", DB_PATH)  # <== ✅ DEBUGGING PATH
-    print("[DEBUG] Using DB path:", DB_PATH)          # <== ✅ ADDED LINE
-    
+    print("[/add_user] Request. DB_PATH:", DB_PATH)
     if not request.is_json:
-        print("[/add_user] Not JSON")
         return jsonify({"status": "error", "message": "Expected JSON payload"}), 400
 
     data = request.get_json()
@@ -128,7 +154,6 @@ def add_user():
     user_info = data['user_info']
     contacts = data['contacts']
 
-    # Basic validation
     required_fields = ('full_name', 'age', 'email', 'phone')
     if not all(user_info.get(k) for k in required_fields):
         return jsonify({"status": "error", "message": "User info fields missing"}), 400
@@ -142,9 +167,6 @@ def add_user():
         print("[/add_user] Exception while inserting:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/test_form')
-def test_form():
-    return render_template('test_form.html')
 
 @app.route('/list_users', methods=['GET'])
 def list_users():
@@ -154,6 +176,61 @@ def list_users():
     conn.close()
     return jsonify({"users": users, "contacts": contacts})
 
+
+# ------------------- NEW ROUTE: LOG ALERT -------------------
+@app.route('/log_alert', methods=['POST'])
+def log_alert_endpoint():
+    """
+    Receives alert data from detection system.
+    Example JSON: {"user_id": "abc-123", "alert_type": "yawn"}
+    """
+    data = request.get_json()
+    print("[/log_alert] Incoming alert data:", data)
+
+    user_id = data.get("user_id")
+    alert_type = data.get("alert_type")
+
+    if not user_id or not alert_type:
+        return jsonify({"error": "Missing user_id or alert_type"}), 400
+
+    try:
+        triggered = log_alert(user_id, alert_type)
+        if triggered:
+            print(f"🚨 [NOTIFICATION] Alert triggered for {alert_type} (user {user_id})")
+
+            # cooldown check
+            key = (user_id, alert_type)
+            now_ts = time.time()
+            last_sent = _last_notification_time.get(key, 0)
+            if now_ts - last_sent < COOL_DOWN_SECONDS:
+                print(f"⏱️ Cooldown active for {key}. Skipping email. last_sent={last_sent}, now={now_ts}")
+                return jsonify({"threshold_exceeded": True, "emails_sent": 0, "cooldown": True}), 200
+
+            # Fetch user + contacts
+            driver_name, contacts = get_contacts_for_user(user_id)
+            if not contacts:
+                print(f"⚠️ No contacts found for user {user_id}")
+                return jsonify({"threshold_exceeded": True, "emails_sent": 0}), 200
+
+            sent_count = 0
+            for contact in contacts:
+                subject, body = compose_alert_message(driver_name, contact["name"], alert_type)
+                success = send_email_notification(contact["email"], subject, body)
+                if success:
+                    sent_count += 1
+
+            # update last notification timestamp
+            _last_notification_time[key] = time.time()
+            print(f"📨 Emails sent successfully: {sent_count}")
+            return jsonify({"threshold_exceeded": True, "emails_sent": sent_count}), 200
+
+        return jsonify({"threshold_exceeded": triggered}), 200
+    except Exception as e:
+        print("[/log_alert] Exception:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+# ------------------- Run Flask -------------------
 if __name__ == '__main__':
     print("[app] Starting Flask app. DB file:", DB_PATH)
     app.run(host='0.0.0.0', port=5000, debug=True)

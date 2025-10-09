@@ -4,10 +4,9 @@ import math
 import threading
 import json
 import time
+import requests
 from playsound import playsound
 from state import alert_counts
-
-
 
 # ------------------- Utility Functions -------------------
 def euclidean_dist(a, b):
@@ -27,6 +26,19 @@ def compute_MAR(mouth_landmarks):
 
 def play_alert(sound_file):
     threading.Thread(target=playsound, args=(sound_file,), daemon=True).start()
+
+# ------------------- Helper to Send Alert to Flask -------------------
+def send_alert_to_backend(user_id: str, alert_type: str):
+    """Send alert data to Flask backend when threshold exceeded."""
+    try:
+        payload = {"user_id": user_id, "alert_type": alert_type}
+        res = requests.post("http://127.0.0.1:5000/log_alert", json=payload, timeout=2)
+        if res.status_code == 200:
+            print(f"[detect_drowsiness] ✅ Logged {alert_type} alert to backend.")
+        else:
+            print(f"[detect_drowsiness] ⚠️ Backend responded with {res.status_code}")
+    except Exception as e:
+        print(f"[detect_drowsiness] ❌ Failed to log alert: {e}")
 
 # ------------------- Load Config -------------------
 with open("alert_config.json", "r") as f:
@@ -54,12 +66,10 @@ yawn_in_progress = False
 head_tilt_start = None
 head_tilt_active = False
 
-# Per-alert counters (new)
 sleep_alert_counter = 0
 yawn_alert_counter = 0
 headtilt_alert_counter = 0
 
-# Alert message variables
 alert_message = ""
 alert_color = (0, 0, 0)
 alert_bg = (0, 0, 0)
@@ -75,13 +85,15 @@ mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
 mp_drawing = mp.solutions.drawing_utils
 
-
+# ------------------- MAIN DETECTION FUNCTION -------------------
 def gen_frames():
     """Generator function for Flask video streaming."""
     global ear_counter, yawn_frame_counter, yawn_event_counter, yawn_in_progress
     global head_tilt_start, head_tilt_active
     global alert_message, alert_color, alert_bg, alert_end_time
     global sleep_alert_counter, yawn_alert_counter, headtilt_alert_counter
+
+    user_id = "test-user-1"  # 🧠 TODO: Replace with dynamic user from frontend later
 
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
@@ -108,20 +120,14 @@ def gen_frames():
                     ear = (compute_EAR(left_eye) + compute_EAR(right_eye)) / 2.0
                     mar = compute_MAR(mouth)
 
-                    # Face rectangle (Green)
-                    xs = [lm[0] for lm in landmarks]
-                    ys = [lm[1] for lm in landmarks]
-                    x_min, x_max = min(xs), max(xs)
-                    y_min, y_max = min(ys), max(ys)
-                    cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-
                     # ------------------- Eyes Closed Detection -------------------
                     if ear < EAR_THRESH:
                         ear_counter += 1
                         if ear_counter >= EYE_CONSEC_FRAMES:
                             play_alert(sleep_alert)
                             sleep_alert_counter += 1 
-                            alert_counts["sleep"] += 1
+                            
+                            send_alert_to_backend(user_id, "sleep")  # 🔥 new backend log
 
                             alert_message = "DROWSY! Eyes Closed"
                             alert_color = (255, 255, 255)
@@ -141,14 +147,12 @@ def gen_frames():
                         yawn_frame_counter = 0
                         yawn_in_progress = False
 
-                    if yawn_in_progress:
-                        cv2.putText(frame, "Yawning...", (30, 100),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-
                     if yawn_event_counter >= YAWN_ALERT_COUNT:
                         play_alert(yawn_alert)
                         yawn_alert_counter += 1
-                        alert_counts["yawn"] += 1   
+                        
+                        send_alert_to_backend(user_id, "yawn")  # 🔥 new backend log
+
                         alert_message = "ALERT! Too Many Yawns"
                         alert_color = (255, 255, 255)
                         alert_bg = (255, 0, 0)
@@ -169,7 +173,8 @@ def gen_frames():
                         elif time.time() - head_tilt_start > 1.0 and not head_tilt_active:
                             play_alert(headtilt_alert)
                             headtilt_alert_counter += 1
-                            alert_counts["head_tilt"] += 1
+                            
+                            send_alert_to_backend(user_id, "head_tilt")  # 🔥 new backend log
 
                             alert_message = "HEAD TILT DETECTED!"
                             alert_color = (0, 0, 0)
@@ -183,7 +188,7 @@ def gen_frames():
                     # Draw landmarks
                     mp_drawing.draw_landmarks(frame, face_landmarks, mp_face_mesh.FACEMESH_TESSELATION)
 
-            # ------------------- Show Alerts (Sticky with Background) -------------------
+            # ------------------- Show Alerts -------------------
             if alert_message and time.time() < alert_end_time:
                 (text_w, text_h), _ = cv2.getTextSize(alert_message, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 3)
                 x, y = 30, 50
@@ -191,13 +196,11 @@ def gen_frames():
                 cv2.putText(frame, alert_message, (x, y),
                             cv2.FONT_HERSHEY_SIMPLEX, 1.5, alert_color, 3)
 
-            # ----------- Encode and yield the frame instead of cv2.imshow -----------
             ret, buffer = cv2.imencode('.jpg', frame)
             if not ret:
                 continue
-            frame_bytes = buffer.tobytes()
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
     finally:
         cap.release()

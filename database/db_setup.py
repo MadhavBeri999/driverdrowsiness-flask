@@ -34,7 +34,48 @@ CREATE TABLE IF NOT EXISTS contacts (
 )
 ''')
 
+# -------- Sessions Table --------
+# Each detection run (driving session) will create one entry here.
+c.execute('''
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP,
+    is_active INTEGER DEFAULT 1,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)
+''')
+
+# -------- Alerts Table --------
+# Stores every alert detected during a session.
+c.execute('''
+CREATE TABLE IF NOT EXISTS alerts (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL,
+    alert_type TEXT NOT NULL,  -- e.g., yawn, sleep, head_tilt
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    count INTEGER DEFAULT 1,
+    FOREIGN KEY(session_id) REFERENCES sessions(id)
+)
+''')
+
+# -------- Notifications Sent Table --------
+# Logs when we send alerts to emergency contacts.
+c.execute('''
+CREATE TABLE IF NOT EXISTS notifications_sent (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    session_id TEXT,
+    alert_type TEXT,
+    sent_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    message TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(session_id) REFERENCES sessions(id)
+)
+''')
+
 conn.commit()
 conn.close()
 
-print("✅ Database and tables created successfully!")
+print("✅ Database and all tables created/verified successfully!")
