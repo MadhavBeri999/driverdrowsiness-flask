@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Company Driver Alert Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+    <h1>🚛 Company Driver Alert Dashboard</h1>
+    <p class="subtitle">Real-time alerts received from driver monitoring system</p>
+
+    <table id="alertTable">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Driver Name</th>
+                <th>Driver ID</th>
+                <th>Alert Type</th>
+                <th>Alert Count</th>
+                <th>Blockchain Tx Hash</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        function loadData() {
+            fetch("/dashboard_data")
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector("#alertTable tbody");
+                    tbody.innerHTML = "";
+
+                    data.forEach(row => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${row.timestamp}</td>
+                            <td>${row.driver_name}</td>
+                            <td>${row.driver_id}</td>
+                            <td>${row.alert_type}</td>
+                            <td>${row.alert_count}</td>
+                            <td>${row.tx_hash}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        // Auto-refresh every 2 seconds
+        setInterval(loadData, 2000);
+        loadData();
+    </script>
+
+</body>
+
+</html>
