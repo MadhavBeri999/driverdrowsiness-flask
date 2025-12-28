@@ -307,7 +307,6 @@ def log_alert_endpoint():
 
         # Only send summary alert if threshold exceeded
         if triggered:
-
             driver_name = get_driver_name(user_id)  # Fetch driver name for summary
 
             # 🚨 FIX 1: Set alert_count to the ALERT_THRESHOLD (e.g., 5)
