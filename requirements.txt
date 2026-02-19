@@ -4,3 +4,4 @@ mediapipe
 playsound
 threading
 jsonlib-python3
+twilio

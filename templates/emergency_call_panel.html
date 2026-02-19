@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emergency Call Panel — Chaukas</title>
+    <meta name="description" content="Emergency contact calling panel for Chaukas Driver Drowsiness Detection System" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+
+    <style>
+        :root {
+            --bg: #060d1a;
+            --card: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+            --accent: #ef4444;
+            --accent2: #f97316;
+            --green: #22c55e;
+            --muted: #64748b;
+            --border: rgba(255, 255, 255, 0.06);
+            --text: #e2e8f0;
+            --subtext: #94a3b8;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 70% 50% at 50% -20%, rgba(239, 68, 68, 0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 80% 80%, rgba(249, 115, 22, 0.06) 0%, transparent 50%);
+            font-family: "Inter", system-ui, -apple-system, sans-serif;
+            color: var(--text);
+            padding: 24px 16px 60px;
+        }
+
+        /* ── Header ─────────────────────────────────────────────────────────── */
+        .header {
+            max-width: 700px;
+            margin: 0 auto 32px;
+            text-align: center;
+        }
+
+        .header .pulse-ring {
+            width: 72px;
+            height: 72px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 2px solid rgba(239, 68, 68, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+            animation: pulseRing 2s ease-in-out infinite;
+        }
+
+        .header .pulse-ring .icon {
+            font-size: 32px;
+            z-index: 1;
+        }
+
+        @keyframes pulseRing {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ef4444, #f97316);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--subtext);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .alert-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            animation: blink 1.4s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        /* ── Cards ───────────────────────────────────────────────────────────── */
+        .panel {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            padding-left: 2px;
+        }
+
+        .contacts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .contact-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+
+        .contact-card:hover {
+            border-color: rgba(239, 68, 68, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.2));
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .contact-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .contact-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 2px;
+        }
+
+        .contact-relation {
+            font-size: 12px;
+            color: var(--subtext);
+            margin-bottom: 4px;
+        }
+
+        .contact-phone {
+            font-size: 14px;
+            color: #94a3b8;
+            font-family: "SF Mono", "Fira Code", monospace;
+            font-weight: 500;
+        }
+
+        .call-btn {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            text-decoration: none;
+            padding: 11px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+        }
+
+        .call-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 28px rgba(239, 68, 68, 0.5);
+        }
+
+        .call-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* ── Auto-call section ───────────────────────────────────────────────── */
+        .auto-call-card {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.06), rgba(249, 115, 22, 0.04));
+            border: 1px solid rgba(239, 68, 68, 0.18);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .auto-call-card h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #f8fafc;
+        }
+
+        .auto-call-card p {
+            font-size: 13px;
+            color: var(--subtext);
+            margin-bottom: 18px;
+            line-height: 1.6;
+        }
+
+        .auto-call-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(239, 68, 68, 0.3);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .auto-call-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px rgba(239, 68, 68, 0.45);
+        }
+
+        .auto-call-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Status box ──────────────────────────────────────────────────────── */
+        #statusBox {
+            display: none;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--subtext);
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: "SF Mono", "Fira Code", monospace;
+        }
+
+        /* ── Empty state ─────────────────────────────────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state .emoji {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        /* ── Back link ───────────────────────────────────────────────────────── */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            color: var(--muted);
+            font-size: 13px;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        /* ── Spinner ─────────────────────────────────────────────────────────── */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Info pill ───────────────────────────────────────────────────────── */
+        .info-pill {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            background: rgba(99, 102, 241, 0.07);
+            border: 1px solid rgba(99, 102, 241, 0.18);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 13px;
+            color: #a5b4fc;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="alert-badge">
+            <span>🔴</span> DROWSINESS ALERT DETECTED
+        </div>
+        <div class="pulse-ring"><span class="icon">📞</span></div>
+        <h1>Emergency Call Panel</h1>
+        <p>Call emergency contacts immediately. Tap a button below to open your dialer,<br>or use the auto-call feature
+            if configured.</p>
+    </div>
+
+    <div class="panel">
+
+        <div class="info-pill">
+            ℹ️ &nbsp;The <strong>📞 Call</strong> buttons open your phone's native dialer with the number pre-filled.
+            On a mobile device or Bluetooth-connected phone, this initiates the call immediately.
+        </div>
+
+        {% if contacts %}
+
+        <div class="section-title">Emergency Contacts ({{ contacts | length }})</div>
+
+        <div class="contacts-list">
+            {% for c in contacts %}
+            <div class="contact-card">
+                <div class="avatar">
+                    {% if c.relation and 'parent' in c.relation.lower() %}👨‍👩‍👧
+                    {% elif c.relation and 'friend' in c.relation.lower() %}👫
+                    {% elif c.relation and 'spouse' in c.relation.lower() or (c.relation and 'wife' in
+                    c.relation.lower()) or (c.relation and 'husband' in c.relation.lower()) %}💑
+                    {% elif c.relation and 'sibling' in c.relation.lower() or (c.relation and 'brother' in
+                    c.relation.lower()) or (c.relation and 'sister' in c.relation.lower()) %}👫
+                    {% else %}👤
+                    {% endif %}
+                </div>
+                <div class="contact-info">
+                    <div class="contact-name">{{ c.name or 'Unknown' }}</div>
+                    <div class="contact-relation">{{ c.relation or 'Emergency Contact' }}</div>
+                    <div class="contact-phone">{{ c.phone }}</div>
+                </div>
+                <a href="tel:{{ c.phone }}" class="call-btn">
+                    📞 Call
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Auto-call section -->
+        <div class="auto-call-card">
+            <h3>🤖 Auto-Call All Contacts</h3>
+            <p>
+                Trigger automated calls to ALL emergency contacts at once via the backend.
+                Requires Vonage or Plivo API credentials configured in the server environment.
+                An automated voice message will play when contacts answer.
+            </p>
+            <button class="auto-call-btn" id="autoCallBtn" onclick="triggerAutoCalls()">
+                📲 &nbsp;Trigger Auto-Calls to All {{ contacts | length }} Contact{% if contacts | length != 1 %}s{%
+                endif %}
+            </button>
+            <div id="statusBox"></div>
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+            <div class="emoji">📵</div>
+            <p>
+                No emergency contacts with phone numbers found.<br>
+                Please register the driver with emergency contact phone numbers,<br>
+                then return to this page.
+            </p>
+        </div>
+
+        {% endif %}
+
+        <a href="/" class="back-link">← Back to main application</a>
+    </div>
+
+    <script>
+        const USER_ID = "{{ user_id or '' }}";
+
+        async function triggerAutoCalls() {
+            const btn = document.getElementById('autoCallBtn');
+            const statusBox = document.getElementById('statusBox');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> &nbsp;Calling...';
+            statusBox.style.display = 'block';
+            statusBox.textContent = '⏳ Sending call requests to backend...\n';
+
+            try {
+                const res = await fetch('/trigger_calls', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: USER_ID,
+                        driver_name: 'the driver',
+                        alert_type: 'drowsiness'
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    statusBox.textContent += '❌ Error: ' + data.error;
+                    btn.innerHTML = '❌ Failed — Try Again';
+                    btn.disabled = false;
+                    return;
+                }
+
+                const provider = (data.provider || 'click_to_call').toUpperCase();
+                let log = `✅ Provider: ${provider}\n`;
+                log += `📞 Contacts reached: ${data.contacts_called ?? 0}\n\n`;
+
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(r => {
+                        if (r.strategy === 'click_to_call') {
+                            log += `📵 ${r.contact} (${r.phone}) — No auto-call API configured. Use Call button above.\n`;
+                        } else if (r.success) {
+                            log += `✅ ${r.contact} — Call initiated successfully\n`;
+                        } else {
+                            log += `❌ ${r.contact} — ${r.error || 'Failed'}\n`;
+                        }
+                    });
+                }
+
+                if (provider === 'CLICK_TO_CALL') {
+                    log += '\n💡 Tip: Configure VONAGE_API_KEY + VONAGE_API_SECRET + VONAGE_FROM_NUMBER\n   in your server environment to enable real auto-calling.';
+                }
+
+                statusBox.textContent += log;
+                btn.innerHTML = '✅ Done — Click to Call Again';
+                btn.disabled = false;
+
+            } catch (err) {
+                statusBox.textContent += '❌ Network error: ' + err.message;
+                btn.innerHTML = '🔥 Call All Contacts';
+                btn.disabled = false;
+            }
+        }
+
+        // Auto-load if triggered by alert redirect
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('auto') === '1') {
+            setTimeout(triggerAutoCalls, 800);
+        }
+    </script>
+
+</body>
+
+</html>

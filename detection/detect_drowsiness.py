@@ -5,6 +5,8 @@ import threading
 import json
 import time
 import requests
+
+# import geocoder
 from playsound import playsound
 
 
@@ -32,20 +34,33 @@ def play_alert(sound_file):
 
 
 # ------------------- Helper to Send Alert to Flask -------------------
+import requests
+
+
 def send_alert_to_backend(alert_type: str):
     """
-    Send alert data to Flask backend when threshold exceeded.
-    Now it automatically uses the latest registered user (no hardcoded ID).
+    Very simple alert: just sends the type.
+    The backend will attach the precise location from the JS heartbeat.
     """
     try:
-        payload = {"alert_type": alert_type}  # ✅ no user_id needed
-        res = requests.post("http://127.0.0.1:5000/log_alert", json=payload, timeout=2)
+        # No more geocoder! We only send the alert_type.
+        payload = {
+            "alert_type": alert_type,
+            "user_id": 1,  # Ensure this matches your logged-in user
+        }
+
+        print(f"[detect_drowsiness] Triggering {alert_type}...")
+
+        # We use a 5-second timeout to be safe
+        res = requests.post("http://127.0.0.1:5000/log_alert", json=payload, timeout=5)
+
         if res.status_code == 200:
-            print(f"[detect_drowsiness] ✅ Logged {alert_type} alert to backend.")
+            print(f"✅ Alert logged successfully.")
         else:
-            print(f"[detect_drowsiness] ⚠️ Backend responded with {res.status_code}")
+            print(f"⚠️ Backend returned error: {res.status_code}")
+
     except Exception as e:
-        print(f"[detect_drowsiness] ❌ Failed to log alert: {e}")
+        print(f"❌ Error communicating with backend: {e}")
 
 
 # ------------------- Load Config -------------------

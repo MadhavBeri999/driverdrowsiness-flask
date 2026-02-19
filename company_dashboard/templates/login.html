@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/favicon-32x32.png">
+    <title>Chaukas Pro | Company Login</title>
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.28/build/spline-viewer.js"></script>
+
+    <style>
+        :root {
+            --cyan: #00f2ff;
+            --deep-blue: #0066ff;
+            --bg-dark: #05080a;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ----------------- LEFT SIDE: 3D HERO ----------------- */
+        .hero-section {
+            width: 65%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* AGGRESSIVE CROP — Hides logo by pushing viewer down and scaling up slightly */
+        spline-viewer {
+            width: 100%;
+            height: 115%;
+            transform: translateY(-8%) scale(1.05);
+
+        }
+
+        /* ----------------- RIGHT SIDE: LOGIN PANEL ----------------- */
+        .login-section {
+            width: 35%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 60px;
+            background: linear-gradient(180deg, #0a0f14 0%, #05080a 100%);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 20;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 380px;
+            margin: auto;
+        }
+
+        /* ----------------- BRAND HEADING (REDESIGNED) ----------------- */
+        .header-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .logo-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* Shield with Cyan Glow */
+        .shield-icon {
+            width: 48px;
+            height: 48px;
+            filter: drop-shadow(0 0 12px var(--cyan));
+        }
+
+        /* Large, Bold, Formal Heading */
+        .brand-title {
+            font-size: 3.2rem;
+            /* Significantly larger */
+            font-weight: 900;
+            /* Ultra Bold */
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            color: #ffffff;
+            line-height: 1;
+            /* No glow on text, just sharp and clean */
+        }
+
+        .header-area p {
+            color: #64748b;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        /* ----------------- FORM ELEMENTS ----------------- */
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-box {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        input {
+            width: 100%;
+            padding: 16px;
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--cyan);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.1);
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 18px;
+            background: #ffffff;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: var(--cyan);
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 242, 255, 0.2);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 1100px) {
+            .hero-section {
+                display: none;
+            }
+
+            .login-section {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <section class="hero-section">
+        <spline-viewer loading="eager" url="https://prod.spline.design/V8uDBNGqRScNz75w/scene.splinecode">
+        </spline-viewer>
+    </section>
+
+    <section class="login-section">
+        <div class="login-container">
+            <div class="header-area">
+                <div class="logo-wrapper">
+                    <svg class="shield-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L3 7V12C3 17.41 6.84 22.38 12 24C17.16 22.38 21 17.41 21 12V7L12 2Z"
+                            fill="#00f2ff" fill-opacity="0.2" stroke="#00f2ff" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M9 12L11 14L15 10" stroke="#00f2ff" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <div class="brand-title">Chaukas Pro</div>
+                </div>
+                <p>Driver Drowsiness System</p>
+            </div>
+
+            <form method="POST">
+                <div class="input-box">
+                    <label>Company Identification</label>
+                    <input type="text" name="company_name" placeholder="Enter Registration Name" required>
+                </div>
+
+                <div class="input-box">
+                    <label>Access Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit">Login to Dashboard</button>
+            </form>
+        </div>
+    </section>
+
+</body>
+
+</html>

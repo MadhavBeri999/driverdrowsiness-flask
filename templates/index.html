@@ -4,7 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- FIXED favicon path -->
+  <link rel="icon" type="image/png" sizes="32x32"
+    href="{{ url_for('static', filename='assets/favicon-32x32-CPjeOVpP.png') }}">
+
   <title>Chaukas - Driver Drowsiness Detection System</title>
+
   <meta name="description"
     content="Advanced driver drowsiness detection system. Always on, always watching to keep you safe on the road." />
   <meta name="author" content="Chaukas" />
@@ -13,22 +19,40 @@
   <meta property="og:description"
     content="Advanced driver drowsiness detection system. Always on, always watching to keep you safe on the road." />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@lovable_dev" />
-  <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  <script type="module" crossorigin src="static/assets/index-Cjvkmj8y.js"></script>
-  <script type="module" crossorigin src="static/assets/boolean-BpCokwB2.js"></script>
-  <script type="module" crossorigin src="static/assets/navmesh-BFd9Mv4x.js"></script>
-  <script type="module" crossorigin src="static/assets/opentype-D6jUvuOk.js"></script>
-  <script type="module" crossorigin src="static/assets/physics-BM4kW-A5.js"></script>
-  <script type="module" crossorigin src="static/assets/process-B9H0U9ag.js"></script>
-  <link rel="stylesheet" crossorigin href="static/assets/index-Bv4BVrS_.css">
+  <!-- FIXED JS -->
+  <script type="module" src="{{ url_for('static', filename='assets/index-CujOHbok.js') }}"></script>
+
+  <!-- FIXED CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='assets/index-ByXtiPYn.css') }}">
 </head>
 
 <body>
   <div id="root"></div>
+
+  <script>
+    function syncLocation() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          fetch("/update_location", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: lat, lng: lng })
+          })
+            .then(response => console.log("Precise Location Synced"))
+            .catch(err => console.error("Sync Error:", err));
+        }, function (error) {
+          console.error("Geolocation Error:", error);
+        }, { enableHighAccuracy: true });
+      }
+    }
+
+    syncLocation();
+    setInterval(syncLocation, 30000);
+  </script>
 
 </body>
 

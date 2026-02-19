@@ -1,43 +1,153 @@
-body {
-    background: #f4f6f7;
-    font-family: Arial, sans-serif;
-    padding: 30px;
+/* --- Root Variables & Theme --- */
+:root {
+    --cyan: #00f2ff;
+    --deep-blue: #0066ff;
+    --bg-dark: #05080a;
+    --card-bg: rgba(10, 15, 20, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.05);
+    --text-main: #e2e8f0;
+    --text-dim: #94a3b8;
 }
 
-h1 {
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-dark);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 40px 20px;
+    background-image:
+        radial-gradient(circle at 50% 0%, rgba(0, 102, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, rgba(0, 242, 255, 0.05) 0%, transparent 30%);
+}
+
+/* --- Header & Branding --- */
+.main-header {
     text-align: center;
-    color: #2c3e50;
+    margin-bottom: 50px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
     margin-bottom: 10px;
 }
 
-.subtitle {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 18px;
-    color: #555;
+.shield-icon {
+    width: 42px;
+    height: 42px;
+    filter: drop-shadow(0 0 10px var(--cyan));
+}
+
+.brand-title {
+    font-size: 2.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    color: #ffffff;
+}
+
+.sub-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.sub-heading h2 {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 400;
+}
+
+.truck-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--cyan);
+}
+
+/* --- Table Design --- */
+.table-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    overflow: hidden;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    font-size: 0.95rem;
+}
+
+thead {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 th {
-    background: #34495e;
-    color: white;
-    padding: 12px;
+    padding: 18px 15px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--cyan);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--glass-border);
 }
 
 td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-    text-align: center;
+    padding: 16px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    color: var(--text-main);
 }
 
-tr:hover {
-    background: #f2f2f2;
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* Table Hover Logic (Preserved and Refined) */
+tr:hover td {
+    background: rgba(0, 242, 255, 0.04);
+    transition: background 0.2s ease;
+}
+
+/* --- Special Cell Formatting --- */
+.time-cell {
+    color: #f87171;
+    /* Keeps your previous red-tint style for time */
+    font-family: monospace;
+}
+
+.hash-cell {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.badge {
+    background: rgba(0, 242, 255, 0.1);
+    color: var(--cyan);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    border: 1px solid rgba(0, 242, 255, 0.2);
 }

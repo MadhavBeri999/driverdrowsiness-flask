@@ -1,33 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Company Driver Alert Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/favicon-32x32.png">
+    <title>Chaukas Pro | Company Dashboard</title>
+    <link rel="stylesheet" href="static/style.css">
 </head>
 
 <body>
 
-    <h1>🚛 Company Driver Alert Dashboard</h1>
-    <p class="subtitle">Real-time alerts received from driver monitoring system</p>
+    <div class="dashboard-wrapper">
+        <header class="main-header">
+            <div class="logo-container">
+                <svg class="shield-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L3 7V12C3 17.41 6.84 22.38 12 24C17.16 22.38 21 17.41 21 12V7L12 2Z" fill="#00f2ff"
+                        fill-opacity="0.2" stroke="#00f2ff" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M9 12L11 14L15 10" stroke="#00f2ff" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <h1 class="brand-title">Chaukas Pro</h1>
+            </div>
 
-    <table id="alertTable">
-        <thead>
-            <tr>
-                <th>Time</th>
-                <th>Driver Name</th>
-                <th>Driver ID</th>
-                <th>Alert Type</th>
-                <th>Alert Count</th>
-                <th>Blockchain Tx Hash</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+            <div class="sub-heading">
+                <svg class="truck-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="1" y="3" width="15" height="13"></rect>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+                <h2>Company Driver Dashboard</h2>
+            </div>
+        </header>
 
+        <main class="table-container">
+            <table id="alertTable">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Driver Name</th>
+                        <th>Driver ID</th>
+                        <th>Alert Type</th>
+                        <th>Alert Count</th>
+                        <th>Blockchain Tx Hash</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </main>
+    </div>
     <script>
         function loadData() {
-            fetch("/dashboard_data")
+            fetch("/dashboard_data", { credentials: "same-origin" })
                 .then(res => res.json())
                 .then(data => {
                     const tbody = document.querySelector("#alertTable tbody");
@@ -45,13 +74,14 @@
                         `;
                         tbody.appendChild(tr);
                     });
-                });
+                })
+                .catch(err => console.error("Dashboard fetch error", err));
         }
 
-        // Auto-refresh every 2 seconds
         setInterval(loadData, 2000);
         loadData();
     </script>
+
 
 </body>
 
